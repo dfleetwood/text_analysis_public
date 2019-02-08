@@ -426,14 +426,14 @@ class TextTask:
         self.ltsm_learn.unfreeze()
         self.ltsm_learn.fit_one_cycle(1, 1e-3)
 
-    def train_ltsm_classifier (self):
+    def train_ltsm_classifier (self, nepoch = 5, lrate = 1e-2):
         self.ltsm_learn = text_classifier_learner(self.data_clas, drop_mult=0.5)
         self.ltsm_learn.load_encoder('ft_enc')
 
         self.ltsm_learn.fit_one_cycle(1, 1e-2)
 
         self.ltsm_learn.freeze_to(-2)
-        self.ltsm_learn.fit_one_cycle(4, 1e-3)
+        self.ltsm_learn.fit (nepoch, lrate)
 
 def load (filename):
     with open(filename, 'rb') as input:
