@@ -10,6 +10,8 @@ import gensim.downloader as api
 from sklearn.metrics.pairwise import cosine_similarity
 from IPython.display import HTML as html_print
 from gensim.models import Word2Vec, FastText
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.decomposition import LatentDirichletAllocation, NMF
 from fastai.text import *
 
 class TextTask:
@@ -435,6 +437,26 @@ class TextTask:
 
         self.ltsm_learn.freeze_to(-2)
         self.ltsm_learn.fit (nepoch, lrate)
+
+    def train_topic_model (self, text_tag, ntopics = 5, max_features = 10000):
+        self.count_vectorizer = CountVectorizer(max_features=max_features, stop_words='english')
+        cvec_train = self.count_vectorizer.fit_transform(self.texts[text_tag])
+        self.cvec_feature_names = self.count_vectorizer.get_feature_names()
+        self.topic_model = NMF(n_components=ntopics, random_state=2344)
+
+        self.topic_model.fit(cvec_train)
+
+    def display_topics (self, nwords):
+        def display_topics(model, feature_names, no_top_words):
+            for topic_idx, topic in enumerate(model.components_):
+                print("Topic %d:" % (topic_idx))
+                print(" ".join([feature_names[i] for i in topic.argsort()[:-no_top_words - 1:-1]]))
+
+        return (display_topics(self.topic_model, self.cvec_feature_names, nwords))
+
+    def get_topic_preds (self, text_tag):
+        cvs = self.count_vectorizer.transform(self.texts[text_tag])
+        return (self.topic_model.transform(cvs))
 
 def load (filename):
     with open(filename, 'rb') as input:
