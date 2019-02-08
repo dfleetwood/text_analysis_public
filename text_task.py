@@ -10,7 +10,7 @@ import gensim.downloader as api
 from sklearn.metrics.pairwise import cosine_similarity
 from IPython.display import HTML as html_print
 from gensim.models import Word2Vec, FastText
-from fastai.text import * 
+from fastai.text import *
 
 class TextTask:
 
@@ -418,7 +418,7 @@ class TextTask:
         self.data_clas = TextClasDataBunch.from_df(path="./", train_df=class_train_df, valid_df=class_valid_df, text_cols="text",
                                               label_cols="label", vocab=self.data_lm.train_ds.vocab, bs=32)
 
-        self.ltsm_learn = language_model_learner(data_lm, pretrained_model=URLs.WT103_1, drop_mult=0.5)
+        self.ltsm_learn = language_model_learner(self.data_lm, pretrained_model=URLs.WT103_1, drop_mult=0.5)
         self.ltsm_learn.save_encoder('ft_enc')
 
     def pretrain_ltsm (self):
