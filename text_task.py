@@ -10,6 +10,7 @@ import gensim.downloader as api
 from sklearn.metrics.pairwise import cosine_similarity
 from IPython.display import HTML as html_print
 from gensim.models import Word2Vec, FastText
+from fastai.text import * 
 
 class TextTask:
 
@@ -382,6 +383,57 @@ class TextTask:
 
     def get_tf_idf (self, text_tag):
         return (self.tf_idfs [text_tag].toarray())
+
+
+    def init_ltsm_classifier (self,
+                              pretrain_traindf_tag,
+                              pretrain_testdf_tag,
+                              classif_traindf_tag,
+                              classif_testdf_tag,
+                              classif_trn_labs,
+                              classif_tst_labs):
+
+        lm_train_df = self.texts[pretrain_traindf_tag]
+        lm_valid_df = self.texts[pretrain_testdf_tag]
+        lm_train_df = pd.DataFrame (lm_train_df)
+        lm_valid_df = pd.DataFrame(lm_valid_df)
+        lm_train_df.columns = ["text"]
+        lm_valid_df.columns = ["text"]
+
+        class_train_df = self.texts[classif_traindf_tag]
+        class_valid_df = self.texts[classif_testdf_tag]
+        class_train_df = pd.DataFrame(class_train_df)
+        class_valid_df = pd.DataFrame(class_valid_df)
+        class_train_df.columns = ["text"]
+        class_valid_df.columns = ["text"]
+        class_train_df['label'] = classif_trn_labs
+        class_valid_df['label'] = classif_tst_labs
+
+        self.data_lm = TextLMDataBunch.from_df(path="./",
+                                          train_df=lm_train_df,
+                                          valid_df=lm_valid_df,
+                                          text_cols="text",
+                                          bs=64)
+
+        self.data_clas = TextClasDataBunch.from_df(path="./", train_df=class_train_df, valid_df=class_valid_df, text_cols="text",
+                                              label_cols="label", vocab=self.data_lm.train_ds.vocab, bs=32)
+
+        self.ltsm_learn = language_model_learner(data_lm, pretrained_model=URLs.WT103_1, drop_mult=0.5)
+        self.ltsm_learn.save_encoder('ft_enc')
+
+    def pretrain_ltsm (self):
+        self.ltsm_learn.fit_one_cycle(1, 1e-2)
+        self.ltsm_learn.unfreeze()
+        self.ltsm_learn.fit_one_cycle(1, 1e-3)
+
+    def train_ltsm_classifier (self):
+        self.ltsm_learn = text_classifier_learner(self.data_clas, drop_mult=0.5)
+        self.ltsm_learn.load_encoder('ft_enc')
+
+        self.ltsm_learn.fit_one_cycle(1, 1e-2)
+
+        self.ltsm_learn.freeze_to(-2)
+        self.ltsm_learn.fit_one_cycle(4, 1e-3)
 
 def load (filename):
     with open(filename, 'rb') as input:
