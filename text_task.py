@@ -1,10 +1,7 @@
-#!/usr/bin/python
-# -*- coding: 'utf-8' -*-
-
 #TODO: Sort out imports
 
 from gensim.parsing.preprocessing import remove_stopwords, strip_punctuation, strip_multiple_whitespaces, strip_numeric
-#import re
+import re
 import pickle
 #from gensim import corpora, models
 from sklearn.feature_extraction.text import TfidfVectorizer
